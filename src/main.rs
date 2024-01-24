@@ -30,19 +30,18 @@ fn pok_prove(sk: Fr, i: usize) -> G2Affine {
 
 fn pok_verify(pk: G1Affine, i: usize, proof: G2Affine) {
     assert!(Bls12_381::multi_pairing(
-        &[pk, G1Affine::generator()],
-        &[derive_point_for_pok(i).neg(), proof]
+        [pk, G1Affine::generator()],
+        [derive_point_for_pok(i).neg(), proof]
     )
     .is_zero());
 }
 
 fn hasher() -> MapToCurveBasedHasher<G2Projective, DefaultFieldHasher<Sha256, 128>, WBMap<Config>> {
-    let wb_to_curve_hasher =
-        MapToCurveBasedHasher::<G2Projective, DefaultFieldHasher<Sha256, 128>, WBMap<Config>>::new(
+    
+    MapToCurveBasedHasher::<G2Projective, DefaultFieldHasher<Sha256, 128>, WBMap<Config>>::new(
             &[1, 3, 3, 7],
         )
-        .unwrap();
-    wb_to_curve_hasher
+        .unwrap()
 }
 
 #[allow(dead_code)]
@@ -52,8 +51,8 @@ fn bls_sign(sk: Fr, msg: &[u8]) -> G2Affine {
 
 fn bls_verify(pk: G1Affine, sig: G2Affine, msg: &[u8]) {
     assert!(Bls12_381::multi_pairing(
-        &[pk, G1Affine::generator()],
-        &[hasher().hash(msg).unwrap().neg(), sig]
+        [pk, G1Affine::generator()],
+        [hasher().hash(msg).unwrap().neg(), sig]
     )
     .is_zero());
 }
