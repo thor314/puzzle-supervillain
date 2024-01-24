@@ -8,6 +8,7 @@ use ark_ff::field_hashers::DefaultFieldHasher;
 
 use ark_serialize::{CanonicalDeserialize, Read};
 
+use log::{debug, LevelFilter};
 use prompt::{puzzle, welcome};
 
 use sha2::Sha256;
@@ -65,6 +66,9 @@ fn from_file<T: CanonicalDeserialize>(path: &str) -> T {
 }
 
 fn main() {
+    env_logger::builder()
+        .filter_level(LevelFilter::Debug)
+        .init();
     welcome();
     puzzle(PUZZLE_DESCRIPTION);
 
@@ -79,18 +83,30 @@ fn main() {
     let message = b"YOUR GITHUB USERNAME";
 
     /* Enter solution here */
+    // use ark_ff::PrimeField;
+    use ark_ec::Group;
+    use ark_std::One;
+    let sk = Fr::one();
+    let pk = G1Projective::generator().mul(sk).into_affine();
+    let new_key = pk;
+    let new_proof = pok_prove(sk, new_key_index);
 
-    let new_key = G1Affine::zero();
-    let new_proof = G2Affine::zero();
-    let aggregate_signature = G2Affine::zero();
+    let sig = hasher().hash(message).unwrap().mul(sk);
+    let aggregate_signature = public_keys
+        .iter()
+        .fold(-sig, |acc, (_, sig_i)| acc + sig_i)
+        .into_affine();
 
+    debug!("new_key: {:?}", new_key);
     /* End of solution */
 
     pok_verify(new_key, new_key_index, new_proof);
+    debug!("pok verified successfully");
     let aggregate_key = public_keys
         .iter()
         .fold(G1Projective::from(new_key), |acc, (pk, _)| acc + pk)
         .into_affine();
+    debug!("agg key created successfully");
     bls_verify(aggregate_key, aggregate_signature, message)
 }
 
